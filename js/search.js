@@ -44,7 +44,7 @@ async function rechercherDocuments(terme, filtres = {}) {
 
     // Supabase supporte la recherche full-text avec .textSearch()
     // qui génère la clause: search_vector @@ to_tsquery('french', ...)
-    let query = supabase
+    let query = supabaseClient
         .from('documents')
         .select('*', { count: 'exact' })
         // textSearch cherche dans la colonne search_vector
@@ -89,10 +89,10 @@ async function rechercherDocuments(terme, filtres = {}) {
  */
 async function sauvegarderRecherche(terme) {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) return;  // pas connecté, on skip
 
-        await supabase.from('historique_recherches').insert({
+        await supabaseClient.from('historique_recherches').insert({
             user_id: user.id,
             terme_recherche: terme
         });
@@ -110,7 +110,7 @@ async function sauvegarderRecherche(terme) {
  * @returns {Promise<string[]>}
  */
 async function getRecherchesRecentes(limite = 5) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('historique_recherches')
         .select('terme_recherche')
         .order('date_recherche', { ascending: false })

@@ -41,7 +41,7 @@ async function getDocuments(filtres = {}) {
 
     // Construction de la requête Supabase
     // La syntaxe est chainée, c'est comme un builder pattern
-    let query = supabase
+    let query = supabaseClient
         .from('documents')
         .select('*', { count: 'exact' })  // count: exact pour avoir le total
         .order(tri, { ascending: tri === 'titre' })  // A-Z pour titre, récent en premier sinon
@@ -91,7 +91,7 @@ async function getDocuments(filtres = {}) {
  */
 async function ajouterDocument(data) {
     // Récupérer l'ID de l'utilisateur connecté
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error('Tu dois être connecté pour ajouter un document');
 
     // Nettoyer les tags (enlever les espaces, ignorer les vides)
@@ -99,7 +99,7 @@ async function ajouterDocument(data) {
         ? data.tags.map(t => t.trim()).filter(t => t.length > 0)
         : [];
 
-    const { data: docCree, error } = await supabase
+    const { data: docCree, error } = await supabaseClient
         .from('documents')
         .insert({
             user_id: user.id,
@@ -157,7 +157,7 @@ async function modifierDocument(id, data) {
 
     // Note : date_modification est mis à jour automatiquement par le trigger SQL
 
-    const { data: docModifie, error } = await supabase
+    const { data: docModifie, error } = await supabaseClient
         .from('documents')
         .update(updateData)
         .eq('id', id)
@@ -181,7 +181,7 @@ async function modifierDocument(id, data) {
  * @returns {Promise<void>}
  */
 async function supprimerDocument(id) {
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('documents')
         .delete()
         .eq('id', id);
@@ -215,7 +215,7 @@ async function toggleFavori(id, estFavori) {
 async function getTousLesTags() {
     // TODO: cette approche charge tous les tags en mémoire
     // Si un user a des milliers de docs, il faudrait paginer ça aussi
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('documents')
         .select('tags');
 
@@ -242,7 +242,7 @@ async function getTousLesTags() {
  * @returns {Promise<object>}
  */
 async function getDocument(id) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('documents')
         .select('*')
         .eq('id', id)

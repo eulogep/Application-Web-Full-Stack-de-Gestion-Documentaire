@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Doc Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Supabase JS via CDN, j'aurais pu utiliser npm mais c'est plus simple comme ça -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="login-page">
+
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo / Titre -->
+            <div class="login-header">
+                <span class="logo-icon">📁</span>
+                <h1>Doc Manager</h1>
+                <p class="login-subtitle">Ton gestionnaire de documents ESIEA</p>
+            </div>
+
+            <!-- Onglets connexion / inscription -->
+            <div class="auth-tabs">
+                <button class="tab-btn active" id="btn-tab-login" onclick="showTab('login')">
+                    Connexion
+                </button>
+                <button class="tab-btn" id="btn-tab-register" onclick="showTab('register')">
+                    Inscription
+                </button>
+            </div>
+
+            <!-- Formulaire Connexion -->
+            <form id="form-login" class="auth-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input 
+                        type="email" 
+                        id="login-email" 
+                        placeholder="ton.email@esiea.fr"
+                        required
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Mot de passe</label>
+                    <input 
+                        type="password" 
+                        id="login-password" 
+                        placeholder="••••••••"
+                        required
+                    >
+                </div>
+                <!-- Message d'erreur (caché par défaut) -->
+                <div id="login-error" class="error-msg" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary btn-full" id="btn-login">
+                    Se connecter
+                </button>
+            </form>
+
+            <!-- Formulaire Inscription -->
+            <form id="form-register" class="auth-form" style="display:none;" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input 
+                        type="email" 
+                        id="register-email" 
+                        placeholder="ton.email@esiea.fr"
+                        required
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Mot de passe</label>
+                    <input 
+                        type="password" 
+                        id="register-password" 
+                        placeholder="Min. 6 caractères"
+                        minlength="6"
+                        required
+                    >
+                </div>
+                <div id="register-error" class="error-msg" style="display:none;"></div>
+                <div id="register-success" class="success-msg" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary btn-full" id="btn-register">
+                    Créer un compte
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        // Petite fonction pour switcher entre les onglets
+        function showTab(tab) {
+            const formLogin = document.getElementById('form-login');
+            const formRegister = document.getElementById('form-register');
+            const tabLogin = document.getElementById('btn-tab-login');
+            const tabRegister = document.getElementById('btn-tab-register');
+
+            if (tab === 'login') {
+                formLogin.style.display = 'block';
+                formRegister.style.display = 'none';
+                tabLogin.classList.add('active');
+                tabRegister.classList.remove('active');
+            } else {
+                formLogin.style.display = 'none';
+                formRegister.style.display = 'block';
+                tabLogin.classList.remove('active');
+                tabRegister.classList.add('active');
+            }
+        }
+
+        // Gérer la soumission du formulaire de connexion
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const btnLogin = document.getElementById('btn-login');
+            const errorDiv = document.getElementById('login-error');
+            
+            // Désactiver le bouton pendant la requête
+            btnLogin.disabled = true;
+            btnLogin.textContent = 'Connexion...';
+            errorDiv.style.display = 'none';
+
+            try {
+                await login(email, password);
+                // login() est dans auth.js, elle redirige si réussi
+            } catch (err) {
+                errorDiv.textContent = err.message || 'Erreur de connexion';
+                errorDiv.style.display = 'block';
+                btnLogin.disabled = false;
+                btnLogin.textContent = 'Se connecter';
+            }
+        }
+
+        // Gérer l'inscription
+        async function handleRegister(event) {
+            event.preventDefault();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const btnRegister = document.getElementById('btn-register');
+            const errorDiv = document.getElementById('register-error');
+            const successDiv = document.getElementById('register-success');
+
+            btnRegister.disabled = true;
+            btnRegister.textContent = 'Inscription...';
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            try {
+                await register(email, password);
+                successDiv.textContent = 'Compte créé ! Vérifie ton email pour confirmer.';
+                successDiv.style.display = 'block';
+                btnRegister.disabled = false;
+                btnRegister.textContent = 'Créer un compte';
+            } catch (err) {
+                errorDiv.textContent = err.message || 'Erreur lors de la création du compte';
+                errorDiv.style.display = 'block';
+                btnRegister.disabled = false;
+                btnRegister.textContent = 'Créer un compte';
+            }
+        }
+    </script>
+</body>
+</html>

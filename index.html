@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doc Manager - ESIEA</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="app-header">
+        <div class="header-left">
+            <span class="logo-icon">📁</span>
+            <span class="app-title">Doc Manager</span>
+        </div>
+
+        <!-- Barre de recherche centrale -->
+        <div class="header-search">
+            <input type="text" id="input-recherche" class="search-input" placeholder="Rechercher un document..."
+                oninput="handleSearchInput(this.value)">
+            <span class="search-icon">🔍</span>
+        </div>
+
+        <div class="header-right">
+            <!-- Bouton pour ajouter un doc -->
+            <button class="btn btn-primary" id="btn-nouveau-doc" onclick="ouvrirModalAjout()">
+                + Nouveau document
+            </button>
+            <!-- Infos user + déconnexion -->
+            <div class="user-menu">
+                <span id="user-email" class="user-email"></span>
+                <button class="btn btn-ghost" onclick="logout()">Déconnexion</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== LAYOUT PRINCIPAL ===== -->
+    <div class="app-layout">
+
+        <!-- SIDEBAR : Filtres -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Type de document</h3>
+                <ul class="filter-list" id="filter-types">
+                    <li>
+                        <button class="filter-btn active" data-type="" onclick="filtrerParType(this, '')">
+                            📋 Tous
+                        </button>
+                    </li>
+                    <li>
+                        <button class="filter-btn" data-type="pdf" onclick="filtrerParType(this, 'pdf')">
+                            📄 PDF
+                        </button>
+                    </li>
+                    <li>
+                        <button class="filter-btn" data-type="note" onclick="filtrerParType(this, 'note')">
+                            📝 Notes
+                        </button>
+                    </li>
+                    <li>
+                        <button class="filter-btn" data-type="lien" onclick="filtrerParType(this, 'lien')">
+                            🔗 Liens
+                        </button>
+                    </li>
+                    <li>
+                        <button class="filter-btn" data-type="image" onclick="filtrerParType(this, 'image')">
+                            🖼️ Images
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Filtres par tags (générés dynamiquement) -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Tags</h3>
+                <div id="tags-container" class="tags-filter-container">
+                    <!-- Les tags seront injectés ici par JS -->
+                    <span class="tags-loading">Chargement...</span>
+                </div>
+            </div>
+
+            <!-- Favoris -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Favoris</h3>
+                <button class="filter-btn" id="btn-favoris" onclick="filtrerFavoris()">
+                    ⭐ Voir mes favoris
+                </button>
+            </div>
+
+            <!-- Stats rapides -->
+            <div class="sidebar-section sidebar-stats">
+                <h3 class="sidebar-title">Stats</h3>
+                <div id="stats-container">
+                    <p class="stat-item"><span id="stat-total">-</span> documents</p>
+                    <p class="stat-item"><span id="stat-favoris">-</span> favoris</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTENU PRINCIPAL -->
+        <main class="main-content">
+
+            <!-- Barre d'infos (résultats, pagination...) -->
+            <div class="content-bar">
+                <span id="results-info" class="results-info">Chargement...</span>
+                <div class="sort-controls">
+                    <label for="select-tri">Trier par :</label>
+                    <select id="select-tri" onchange="changerTri(this.value)">
+                        <option value="date_creation">Date de création</option>
+                        <option value="date_modification">Date de modification</option>
+                        <option value="titre">Titre (A-Z)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Grille de documents -->
+            <div id="documents-grid" class="documents-grid">
+                <!-- Les cards sont générées par JS -->
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Chargement de tes documents...</p>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination-container" class="pagination-container" style="display:none;">
+                <button class="btn btn-ghost" id="btn-prev-page" onclick="changerPage(-1)" disabled>
+                    ← Précédent
+                </button>
+                <span id="pagination-info" class="pagination-info">Page 1</span>
+                <button class="btn btn-ghost" id="btn-next-page" onclick="changerPage(1)">
+                    Suivant →
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ===== MODAL : Ajouter/Modifier un document ===== -->
+    <div id="modal-document" class="modal-overlay" style="display:none;" onclick="fermerModalSiClic(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="modal-titre">Nouveau document</h2>
+                <button class="modal-close" onclick="fermerModal()">✕</button>
+            </div>
+
+            <form id="form-document" onsubmit="soumettreDocument(event)">
+                <!-- ID caché pour le mode édition -->
+                <input type="hidden" id="doc-id">
+
+                <div class="form-group">
+                    <label for="doc-titre">Titre *</label>
+                    <input type="text" id="doc-titre" placeholder="Ex : Cours de BDD 2024" required maxlength="255">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="doc-type">Type *</label>
+                        <select id="doc-type" required onchange="adapterFormulaire(this.value)">
+                            <option value="">Choisir...</option>
+                            <option value="pdf">📄 PDF</option>
+                            <option value="note">📝 Note</option>
+                            <option value="lien">🔗 Lien</option>
+                            <option value="image">🖼️ Image</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="group-taille">
+                        <label for="doc-taille">Taille (Ko)</label>
+                        <input type="number" id="doc-taille" placeholder="Ex : 350" min="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="doc-description">Description</label>
+                    <textarea id="doc-description" rows="2" placeholder="Décris brièvement ce document..."></textarea>
+                </div>
+
+                <!-- Contenu / URL (change selon le type) -->
+                <div class="form-group" id="group-contenu">
+                    <label for="doc-contenu" id="label-contenu">Contenu / URL</label>
+                    <textarea id="doc-contenu" rows="4" placeholder="Colle ici l'URL ou le texte extrait..."></textarea>
+                </div>
+
+                <!-- Simulateur upload PDF -->
+                <div class="form-group" id="group-upload" style="display:none;">
+                    <label>Fichier (simulation)</label>
+                    <div class="upload-zone" id="upload-zone" onclick="simulerUpload()">
+                        <span class="upload-icon">📤</span>
+                        <p>Clique pour "uploader" un fichier</p>
+                        <p class="upload-note">⚠️ Simulation — le stockage de fichiers sera sur Supabase Storage (pas
+                            encore implémenté)</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="doc-tags">Tags (séparés par des virgules)</label>
+                    <input type="text" id="doc-tags" placeholder="Ex : cours, bdd, semestre3">
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="doc-favori">
+                        ⭐ Ajouter aux favoris
+                    </label>
+                </div>
+
+                <div id="modal-error" class="error-msg" style="display:none;"></div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" onclick="fermerModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary" id="btn-soumettre">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL : Confirmation suppression ===== -->
+    <div id="modal-suppression" class="modal-overlay" style="display:none;">
+        <div class="modal-card modal-small">
+            <h2>Supprimer ce document ?</h2>
+            <p>Cette action est irréversible.</p>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="fermerModalSuppression()">Annuler</button>
+                <button class="btn btn-danger" id="btn-confirmer-suppression">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts - l'ordre compte ! auth.js doit être chargé avant app.js -->
+    <script src="js/auth.js"></script>
+    <script src="js/documents.js"></script>
+    <script src="js/search.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

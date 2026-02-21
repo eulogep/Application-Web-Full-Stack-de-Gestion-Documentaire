@@ -232,4 +232,4 @@ doc-manager/
 
 ---
 
-*Projet ESIEA 2024 — MABIALA EULOGE JUNIOR*
+**Projet ESIEA 2024 — MABIALA EULOGE JUNIOR**

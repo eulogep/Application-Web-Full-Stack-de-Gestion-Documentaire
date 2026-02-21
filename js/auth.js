@@ -9,7 +9,7 @@
 
 // Config Supabase (clé publique uniquement — la secret key ne va JAMAIS côté client)
 const SUPABASE_URL = 'https://pgpsmtyrvqeypqjncirc.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_zfV-U0ShzPyIiUz5aWhkZw_81FQDAOE';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBncHNtdHlydnFleXBxam5jaXJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MzE1NDIsImV4cCI6MjA4NzIwNzU0Mn0.XMWjb-ySgQiTEi-5tH7aoj_Znq-Ji7qycO1BqtKpGQo';
 
 // Initialisation du client Supabase
 // IMPORTANT : j'utilise 'supabaseClient' et pas 'supabase' pour éviter
